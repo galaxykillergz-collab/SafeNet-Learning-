@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: default-deny all paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Bootstrapped Primary Admin + Admin collection check
+    function isPrimaryAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email != null && 
+             request.auth.token.email.lower() == 'galaxykillergz@gmail.com';
+    }
+
+    function isRegisteredAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower())))
+      );
+    }
+
+    function isAdmin() {
+      return isPrimaryAdmin() || isRegisteredAdmin();
+    }
+
+    // Validation for User profile
+    function isValidUser(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 100 &&
+             data.role in ['admin', 'user'];
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (
+        (incoming().role == 'user') || isAdmin()
+      );
+      
+      allow update: if isValidUser(incoming()) && (
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'phoneNumber', 'studentId', 'avatar', 'institution', 
+          'completedModules', 'isCertificateEligible', 'updatedAt', 'quizScores'
+        ])) ||
+        isAdmin()
+      );
+      
+      allow delete: if isAdmin();
+
+      // Subcollection: Quiz Scores
+      match /quizScores/{moduleId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin()) &&
+                               incoming().highestScore is number &&
+                               incoming().passed is bool;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Admins Allowlist Collection
+    match /admins/{adminId} {
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Evaluations Collection
+    match /evaluations/{evaluationId} {
+      allow create: if isSignedIn() &&
+                       incoming().overallAverage is number &&
+                       incoming().overallAverage >= 1.0 &&
+                       incoming().overallAverage <= 5.0;
+      allow get: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

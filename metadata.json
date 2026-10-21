@@ -1,0 +1,6 @@
+{
+  "name": "SafeNet Learning",
+  "description": "เว็บแอปพลิเคชันเพื่อการเรียนรู้เรื่องการใช้อินเทอร์เน็ตอย่างปลอดภัย การป้องกันภัยคุกคามไซเบอร์ พร้อมแบบทดสอบ 70 ข้อ และแบบประเมินความคิดเห็น พัฒนาด้วยกระบวนการ CPS",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

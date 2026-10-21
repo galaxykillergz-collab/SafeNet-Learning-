@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing basic info, contact details, and learning progress",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "phoneNumber": { "type": "string", "maxLength": 25 },
+        "studentId": { "type": "string", "maxLength": 35 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "institution": { "type": "string", "maxLength": 150 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "isGmail": { "type": "boolean" },
+        "completedModules": { "type": "array" },
+        "isCertificateEligible": { "type": "boolean" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized administrator record",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 100 },
+        "addedBy": { "type": "string", "maxLength": 100 },
+        "addedAt": { "type": "string" },
+        "note": { "type": "string", "maxLength": 200 },
+        "isPrimary": { "type": "boolean" }
+      },
+      "required": ["email", "addedBy", "addedAt"]
+    },
+    "QuizScore": {
+      "title": "QuizScore",
+      "description": "User quiz score record per module",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "moduleId": { "type": "number" },
+        "highestScore": { "type": "number" },
+        "lastScore": { "type": "number" },
+        "attempts": { "type": "number" },
+        "passed": { "type": "boolean" },
+        "lastAttemptDate": { "type": "string" }
+      },
+      "required": ["userId", "moduleId", "highestScore", "passed"]
+    },
+    "Evaluation": {
+      "title": "Evaluation",
+      "description": "Learner evaluation survey result",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "userEmail": { "type": "string", "maxLength": 100 },
+        "userName": { "type": "string", "maxLength": 100 },
+        "submittedAt": { "type": "string" },
+        "overallAverage": { "type": "number" },
+        "categoryAverages": { "type": "object" },
+        "answers": { "type": "object" }
+      },
+      "required": ["submittedAt", "overallAverage"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/admins/{adminId}": {
+      "schema": "AdminRecord",
+      "description": "Admin email allowlist collection"
+    },
+    "/users/{userId}/quizScores/{moduleId}": {
+      "schema": "QuizScore",
+      "description": "Module quiz score records for each user"
+    },
+    "/evaluations/{evaluationId}": {
+      "schema": "Evaluation",
+      "description": "All anonymous or identified evaluations"
+    }
+  }
+}
